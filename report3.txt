@@ -1,0 +1,47 @@
+SELECT DISTINCT u.id,u.firstname,u.lastname,u.email,
+IF(u.deleted = 0 AND u.suspended = 0, 'Active', 'Inactive') AS 'Account status',
+DATE_FORMAT(FROM_UNIXTIME(u.`firstaccess`), '%d-%m-%Y %H:%i:%s') AS 'First login date time', 
+DATE_FORMAT(FROM_UNIXTIME(u.lastaccess), '%d-%m-%Y %H:%i:%s') AS 'Last login date time', 
+DATE_FORMAT(FROM_UNIXTIME(ue.timestart), '%d-%m-%Y %H:%i:%s') AS 'enrol time start',
+ue.timeend, ue.modifierid, 
+DATE_FORMAT(FROM_UNIXTIME(ue.timecreated), '%d-%m-%Y %H:%i:%s') AS 'enrol time create',
+DATE_FORMAT(FROM_UNIXTIME(COALESCE(ul.timeaccess, 0)), '%d-%m-%Y %H:%i:%s') AS 'last course access'
+FROM mdl_user u JOIN mdl_user_enrolments ue ON (ue.userid = u.id) -- AND ue.enrolid IN (:param1,:param2)) 
+JOIN mdl_enrol e ON (e.id = ue.enrolid) 
+LEFT JOIN mdl_user_lastaccess ul ON (ul.courseid = e.courseid AND ul.userid = u.id)
+WHERE u.id <> 1 AND u.deleted = 0 AND u.confirmed = 1 ORDER BY lastname ASC   
+
+
+--------------------------
+
+SELECT DISTINCT u.id,u.firstname,u.lastname,u.email,
+IF(u.deleted = 0 AND u.suspended = 0, 'Active', 'Inactive') AS 'Account status',
+DATE_FORMAT(FROM_UNIXTIME(u.`firstaccess`), '%d-%m-%Y %H:%i:%s') AS 'First login date time', 
+DATE_FORMAT(FROM_UNIXTIME(u.lastaccess), '%d-%m-%Y %H:%i:%s') AS 'Last login date time', 
+DATE_FORMAT(FROM_UNIXTIME(ue.timestart), '%d-%m-%Y %H:%i:%s') AS 'enrol time start',
+co.id AS 'course id',
+co.`fullname` AS 'course full name',
+co.`shortname` AS 'course short name',
+ca.`name` AS 'course category',
+coc.`gradepass` AS 'grade pass of course',
+DATE_FORMAT(FROM_UNIXTIME(co.`startdate`), '%d-%m-%Y') AS 'course start date',
+DATE_FORMAT(FROM_UNIXTIME(ue.`timestart`), '%d-%m-%Y') AS 'enrol time start',
+IF(ue.timeend = 0, '', DATE_FORMAT(FROM_UNIXTIME(ue.timeend), '%d-%m-%Y')) AS 'enrol time end', 
+(SELECT IF(ue.timeend = 0, 'no time end', TIMESTAMPDIFF(DAY,DATE_FORMAT(FROM_UNIXTIME(ue.`timestart`), '%Y-%m-%d'),DATE_FORMAT(FROM_UNIXTIME(ue.timeend), '%Y-%m-%d')))) AS 'duration of enrol (DAY)',
+DATE_FORMAT(FROM_UNIXTIME(COALESCE(ul.timeaccess, 0)), '%d-%m-%Y %H:%i:%s') AS 'last course access',
+(
+SELECT COUNT(*) FROM mdl_user u2 JOIN mdl_user_enrolments ue2 ON (ue2.userid = u2.id)  
+JOIN mdl_enrol e2 ON (e2.id = ue2.enrolid) 
+WHERE u2.id = u.id
+) AS 'Number of Courses'
+FROM mdl_user u JOIN mdl_user_enrolments ue ON (ue.userid = u.id) -- AND ue.enrolid IN (:param1,:param2)) 
+JOIN mdl_enrol e ON (e.id = ue.enrolid) 
+JOIN mdl_course co ON co.id = e.courseid
+LEFT JOIN mdl_course_completion_criteria coc ON co.id = coc.course
+JOIN `mdl_course_categories` ca ON ca.id = co.`category`
+LEFT JOIN mdl_user_lastaccess ul ON (ul.courseid = e.courseid AND ul.userid = u.id)
+WHERE u.id <> 1 AND u.deleted = 0 AND u.confirmed = 1 ORDER BY lastname ASC             
+                      
+                        
+    				
+				
